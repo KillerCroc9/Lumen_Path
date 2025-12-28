@@ -412,7 +412,14 @@ class LumenPath {
     }
 }
 
-// Initialize game when DOM is loaded
-window.addEventListener('DOMContentLoaded', () => {
+// Initialize game
+// Note: ES modules with type="module" are deferred by default and execute after DOM is parsed
+// Using document.readyState check to handle cases where DOM might already be loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        new LumenPath();
+    });
+} else {
+    // DOM is already loaded
     new LumenPath();
-});
+}
