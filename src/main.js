@@ -214,11 +214,29 @@ class LumenPath {
 
             // Wrap around
             if (positions[i * 3 + 1] > 50) positions[i * 3 + 1] = 0;
-            if (Math.abs(positions[i * 3]) > 50) positions[i * 3] *= -1;
-            if (Math.abs(positions[i * 3 + 2]) > 50) positions[i * 3 + 2] *= -1;
+            if (positions[i * 3] > 50) positions[i * 3] = -50;
+            if (positions[i * 3] < -50) positions[i * 3] = 50;
+            if (positions[i * 3 + 2] > 50) positions[i * 3 + 2] = -50;
+            if (positions[i * 3 + 2] < -50) positions[i * 3 + 2] = 50;
         }
         
         this.particles.mesh.geometry.attributes.position.needsUpdate = true;
+    }
+
+    updateBridges(delta) {
+        this.scene.children.forEach(child => {
+            if (child.userData.isAnimating && child.userData.activationProgress !== undefined) {
+                child.userData.activationProgress += delta * 0.5;
+                
+                const progress = Math.min(child.userData.activationProgress, 0.7);
+                child.material.opacity = progress;
+                child.material.emissiveIntensity = Math.min(progress * 2, 0.5);
+                
+                if (child.userData.activationProgress >= 0.7) {
+                    child.userData.isAnimating = false;
+                }
+            }
+        });
     }
 
     setupEventListeners() {
@@ -283,19 +301,8 @@ class LumenPath {
         bridges.forEach(bridge => {
             if (!bridge.userData.activated) {
                 bridge.userData.activated = true;
-                
-                // Animate bridge appearing
-                let opacity = 0;
-                const animateBridge = () => {
-                    opacity += 0.02;
-                    bridge.material.opacity = Math.min(opacity, 0.7);
-                    bridge.material.emissiveIntensity = Math.min(opacity * 2, 0.5);
-                    
-                    if (opacity < 0.7) {
-                        requestAnimationFrame(animateBridge);
-                    }
-                };
-                animateBridge();
+                bridge.userData.activationProgress = 0;
+                bridge.userData.isAnimating = true;
             }
         });
     }
@@ -390,6 +397,9 @@ class LumenPath {
 
         // Update beacons
         this.beacons.forEach(beacon => beacon.update(delta));
+
+        // Update bridges
+        this.updateBridges(delta);
 
         // Update particles
         this.updateParticles(delta);

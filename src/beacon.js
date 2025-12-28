@@ -69,32 +69,12 @@ export class Beacon {
         if (this.isActivated) return;
         
         this.isActivated = true;
+        this.activationProgress = 0;
+        this.isAnimating = true;
 
-        // Animate crystal activation
-        const targetEmissive = new THREE.Color(0xffd700);
-        const targetColor = new THREE.Color(0xffed4e);
-        
-        let progress = 0;
-        const animate = () => {
-            progress += 0.02;
-            
-            if (progress < 1) {
-                // Crystal glow
-                this.crystal.material.emissive.lerp(targetEmissive, 0.1);
-                this.crystal.material.emissiveIntensity = Math.min(progress * 2, 1.5);
-                this.crystal.material.color.lerp(targetColor, 0.1);
-                
-                // Light intensity
-                this.light.intensity = progress * 3;
-                
-                // Ring appearance
-                this.ring.material.opacity = Math.min(progress, 0.8);
-                this.ring.material.emissiveIntensity = Math.min(progress, 0.7);
-                
-                requestAnimationFrame(animate);
-            }
-        };
-        animate();
+        // Set target colors for animation
+        this.targetEmissive = new THREE.Color(0xffd700);
+        this.targetColor = new THREE.Color(0xffed4e);
     }
 
     update(delta) {
@@ -104,6 +84,27 @@ export class Beacon {
             const pulse = Math.sin(this.pulseTime * 2) * 0.05 + 0.1;
             this.crystal.material.emissiveIntensity = pulse;
         } else {
+            // Handle activation animation
+            if (this.isAnimating && this.activationProgress < 1) {
+                this.activationProgress += delta * 0.5;
+                
+                // Crystal glow
+                this.crystal.material.emissive.lerp(this.targetEmissive, 0.1);
+                this.crystal.material.emissiveIntensity = Math.min(this.activationProgress * 2, 1.5);
+                this.crystal.material.color.lerp(this.targetColor, 0.1);
+                
+                // Light intensity
+                this.light.intensity = this.activationProgress * 3;
+                
+                // Ring appearance
+                this.ring.material.opacity = Math.min(this.activationProgress, 0.8);
+                this.ring.material.emissiveIntensity = Math.min(this.activationProgress, 0.7);
+                
+                if (this.activationProgress >= 1) {
+                    this.isAnimating = false;
+                }
+            }
+            
             // Rotating animation when activated
             this.crystal.rotation.y += delta * 0.5;
             this.ring.rotation.z += delta * 0.3;
